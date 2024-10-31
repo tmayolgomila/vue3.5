@@ -23,12 +23,20 @@ const { messages } = defineProps<Props>();
 
 const chatRef = ref<HTMLDivElement | null>(null);
 
-watch(() => messages, () => {
-  setTimeout(() => {
-    chatRef.value?.scrollTo({
-      top: chatRef.value.scrollHeight,
-      behavior: 'smooth',
-    });
-  }, 200);
-});
+watch(
+  () => messages,
+  () => {
+    console.log('New message added');
+    setTimeout(() => {
+      chatRef.value?.scrollTo({
+        top: chatRef.value.scrollHeight,
+        behavior: 'smooth',
+      });
+    }, 200);
+  },
+  { deep: true }
+);
+
+
+
 </script>
