@@ -1,7 +1,7 @@
 <template>
   <section>
     <h3>Counter: {{ counter }}</h3>
-    <h3>Square: {{ squareCounter }}</h3>
+    <h3 data-testid="square-label">Square: {{ squareCounter }}</h3>
 
     <div>
       <button class="btn" @click="counter++">+1</button>
@@ -13,19 +13,12 @@
 <script lang="ts" setup>
 //We take the logic to the composable useCounter and then import it here:
 import { useCounter } from '@/composables/useCounter';
+interface Props {
+  value: number;
+}
+const props = defineProps<Props>()
 
-const { counter, squareCounter } = useCounter(10)
-
-//import { computed, ref } from 'vue';
-//
-//interface Props {
-//  value: number;
-//}
-//
-//const props = defineProps<Props>()
-
-//const counter = ref(props.value)
-//const squareCounter = computed(() => counter.value * counter.value)
+const { counter, squareCounter } = useCounter(props.value)
 
 </script>
 
