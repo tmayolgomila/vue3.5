@@ -5,7 +5,7 @@
 
     <div>
       <button class="btn" @click="counter++">+1</button>
-      <button class="btn" @click="counter--">-1</button>
+      <button data-testid="decrease-button" class="btn" @click="counter--">-1</button>
     </div>
   </section>
 </template>
