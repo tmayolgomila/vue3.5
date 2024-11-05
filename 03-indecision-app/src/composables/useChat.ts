@@ -9,6 +9,7 @@ export const useChat = () => {
   const getHerResponse = async () => {
     const resp = await fetch('https://yesno.wtf/api');
     const data = (await resp.json()) as YesNoResponse;
+    console.log(data)
     return data;
   };
 
