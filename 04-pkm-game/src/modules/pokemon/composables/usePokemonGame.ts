@@ -1,6 +1,7 @@
 import { GameStatus,type Pokemon, type PokemonListResponse } from "@/interfaces"
 import { computed, onMounted, ref } from "vue"
 import {pokemonApi} from "../api/pokemonApi"
+import confetti from 'canvas-confetti'
 
 export const usePokemonGame = () => {
 //El juego va a tener 3 estados, cuando se gana, cuando se pierde y cuando estamos jugando
@@ -31,19 +32,35 @@ export const usePokemonGame = () => {
     return pokemonArray.sort(() => Math.random() - 0.5)//Los devolvemos desordenados siempre, sino siempre saldran los 4 primeros
   }
   //Esta va a ser la función que empiece un nuevo juego
-  const getNextOptions = (howMany:number=4) => {
+  const getNextRound = (howMany:number=4) => {
+    console.log('entra en getNextRound')
     gameStatus.value = GameStatus.Playing
     pokemonOptions.value = pokemons.value.slice(0, howMany)//almaceno los primeros 4 (ya estan ordenados aleatoriamente)
     pokemons.value = pokemons.value.slice(howMany) //separo el resto que no he almacenado
   }
 
+  const checkAnswer = (id: number) => {
+
+    const hasWon = randomPokemon.value.id === id
+
+    if(hasWon){
+      gameStatus.value = GameStatus.Won
+      confetti({
+        particleCount:300,
+        spread: 150,
+        origin:{y:0.6},
+      })
+      return;
+    }
+    gameStatus.value = GameStatus.Lost
+
+  }
 
 
   onMounted(async()=>{
-    await new Promise(r => setTimeout(r,300)) //esto lo usamos simplemente para simular la carga de pokemons, porque es tan rápida qu eno la tiene(Se puede borrar)
 
     pokemons.value = await getPokemons()
-    getNextOptions()
+    getNextRound()
     console.log(pokemonOptions.value)
   })
 
@@ -55,7 +72,8 @@ export const usePokemonGame = () => {
     randomPokemon,
 
     //Methods
-    getNextOptions,
+    getNextRound,
+    checkAnswer
 
   }
 }
