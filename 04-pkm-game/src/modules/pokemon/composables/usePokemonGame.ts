@@ -53,7 +53,6 @@ export const usePokemonGame = () => {
       return;
     }
     gameStatus.value = GameStatus.Lost
-
   }
 
 
