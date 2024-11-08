@@ -19,6 +19,7 @@ import { RouterLink } from 'vue-router';
           <RouterLink to="/pricing"> Pricing </RouterLink>
           <RouterLink to="/contact"> Contact </RouterLink>
           <RouterLink to="/auth">Login</RouterLink>
+          <RouterLink to="/pkm/1">Pkm</RouterLink>
         </div>
 
       </nav>

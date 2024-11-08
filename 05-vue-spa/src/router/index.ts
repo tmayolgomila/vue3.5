@@ -41,6 +41,11 @@ export const router = createRouter({
         {
           path: '/pkm/:id',
           name:'pkm',
+          props: (route)=>{
+            const id = +route.params.id
+            console.log({id})
+            return isNaN(id) ? {id: 1} : { id }
+          },
           component: PokemonPage
         }
       ]
