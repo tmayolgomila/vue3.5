@@ -11,7 +11,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (username === 'admin' && password === 'password') {
       user.value = username
       localStorage.setItem('user', username)
-      router.push({ name: 'home' })
+      router.push({ name: 'projectList' })
     } else {
       alert('Incorrect credentials')
     }
