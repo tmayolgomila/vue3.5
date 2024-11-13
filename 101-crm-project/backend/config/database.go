@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -9,12 +10,13 @@ import (
 
 var DB *gorm.DB
 
+// Conectar a la base de datos
 func ConnectDatabase() {
-	dsn := "crm_user:password_seguro@tcp(localhost:3306)/crm_project?charset=utf8mb4&parseTime=True&loc=Local"
-	database, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	var err error
+	dsn := "root:root@tcp(127.0.0.1:3306)/projectDB?charset=utf8mb4&parseTime=True&loc=Local"
+	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		panic("Error al conectar con la base de datos")
+		log.Fatal("Error al conectar con la base de datos:", err)
 	}
-	DB = database
 	fmt.Println("Conexión exitosa a la base de datos")
 }
