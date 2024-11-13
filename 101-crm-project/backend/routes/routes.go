@@ -9,7 +9,7 @@ import (
 func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 	userController := controllers.UserController{DB: db}
 
-	// User routes
+	// Rutas de usuario
 	userRoutes := router.Group("/users")
 	{
 		userRoutes.POST("/", userController.CreateUser)
