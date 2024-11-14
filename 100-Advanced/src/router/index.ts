@@ -13,6 +13,10 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
+      path: '/',
+      redirect: '/projects',
+    },
+    {
       path: '/projects',
       name: 'projectLayout',
       component: ProjectLayout,
@@ -75,7 +79,6 @@ router.beforeEach((to, from, next) => {
   } else {
     next()
   }
-
 })
 
 export default router
