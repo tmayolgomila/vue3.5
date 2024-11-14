@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white dark:bg-zinc-700 p-6 rounded shadow-md w-64 absolute ease-in-out duration-300"
+  <div class="absolute bg-white dark:bg-slate-800 p-6 rounded shadow-md w-80"
     :style="{ top: `${position.top}px`, left: `${position.left}px`, position: 'absolute', zIndex: 50 }">
 
     <button @click="handleDelete" class="text-red-500">Remove List</button>

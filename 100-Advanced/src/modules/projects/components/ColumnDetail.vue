@@ -32,8 +32,9 @@
       </template>
     </draggableComponent>
 
-    <button @click="addCard" class="text-blue-500 mt-2"><ion-icon name="add-outline"></ion-icon>&nbsp; Add New
-      Card</button>
+    <button @click="addCard" class=" mt-2 flex items-center space-x-1">
+      <ion-icon name="add-outline"></ion-icon><span>Add New Card</span>
+    </button>
 
     <ColumnModal v-if="showModal" :columnId="column.id" :position="modalPosition" @deleteColumn="deleteColumn"
       @close="showModal = false" />
@@ -64,7 +65,7 @@ const emits = defineEmits(['addCard', 'editCard', 'deleteCard', 'dragCard', 'edi
 
 const openModal = (event: MouseEvent) => {
 
-  const columnContainer = (event.currentTarget as HTMLElement).closest('.p-4')
+  const columnContainer = (event.currentTarget as HTMLElement).closest('.p-2')
   const rect = columnContainer?.getBoundingClientRect()
   if (rect) {
     modalPosition.value = { top: rect.top, left: rect.left }

@@ -1,14 +1,27 @@
 <template>
   <div v-if="project" class="h-full">
     <h2 class="text-2xl font-semibold mb-4">Project: {{ project.name }}</h2>
-    <div class="flex space-x-4 ">
-      <ColumnDetail v-for="column in project.columns" :key="column.id" :column="column" @addCard="handleAddCard"
-        @editCard="handleEditCard" @deleteCard="handleDeleteCard" @dragCard="handleDragCard"
-        @editColumn="handleEditColumn" @deleteColumn="handleDeleteColumn" />
-      <button @click="addColumn">Add New Column</button>
+    <div class="flex space-x-4">
+      <!-- Contenedor de columnas y botón -->
+      <div class="flex space-x-4 items-start">
+        <!-- Columnas -->
+        <div class="flex space-x-4">
+          <ColumnDetail v-for="column in project.columns" :key="column.id" :column="column" @addCard="handleAddCard"
+            @editCard="handleEditCard" @deleteCard="handleDeleteCard" @dragCard="handleDragCard"
+            @editColumn="handleEditColumn" @deleteColumn="handleDeleteColumn" />
+        </div>
+        <!-- Botón Add New Column alineado en la parte superior derecha -->
+        <button @click="addColumn"
+          class="flex items-center space-x-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full h-12">
+          <ion-icon name="add-outline"></ion-icon>
+          <span>Add New Column</span>
+        </button>
+      </div>
     </div>
   </div>
+
   <p v-else>No project found.</p>
+
 </template>
 
 <script setup lang="ts">
