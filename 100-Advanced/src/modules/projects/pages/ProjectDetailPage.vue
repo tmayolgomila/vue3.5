@@ -57,17 +57,15 @@ const handleDeleteColumn = (columnId: number) => {
 
 const handleAddCard = (columnId: number) => {
   const cardTitle = prompt('Enter card title')
-  const cardDescription = prompt('Enter card description')
-  if (cardTitle && cardDescription) {
-    projectStore.addCardToColumn(projectId, columnId, cardTitle, cardDescription)
+  if (cardTitle) {
+    projectStore.addCardToColumn(projectId, columnId, cardTitle)
   }
 }
 
 const handleEditCard = ({ columnId, cardId }: { columnId: number, cardId: number }) => {
   const cardTitle = prompt('Edit card title')
-  const cardDescription = prompt('Edit card description')
-  if (cardTitle && cardDescription) {
-    projectStore.editCardInColumn(projectId, columnId, cardId, cardTitle, cardDescription)
+  if (cardTitle) {
+    projectStore.editCardInColumn(projectId, columnId, cardId, cardTitle)
   }
 }
 

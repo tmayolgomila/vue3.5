@@ -4,7 +4,6 @@ import { ref, watch } from 'vue'
 interface Card {
   id: number
   title: string
-  description: string
 }
 interface Column {
   id: number
@@ -58,34 +57,22 @@ export const useProjectStore = defineStore('project', () => {
     }
   }
 
-  const addCardToColumn = (
-    projectId: number,
-    columnId: number,
-    cardTitle: string,
-    cardDescription: string,
-  ) => {
+  const addCardToColumn = (projectId: number, columnId: number, cardTitle: string) => {
     const project = projects.value.find((p) => p.id === projectId)
     const column = project?.columns.find((c) => c.id === columnId)
     if (column) {
-      const newCard: Card = { id: Date.now(), title: cardTitle, description: cardDescription }
+      const newCard: Card = { id: Date.now(), title: cardTitle }
       column.cards.push(newCard)
       saveProjectsToLocalStorage()
     }
   }
 
-  const editCardInColumn = (
-    projectId: number,
-    columnId: number,
-    cardId: number,
-    title: string,
-    description: string,
-  ) => {
+  const editCardInColumn = (projectId: number, columnId: number, cardId: number, title: string) => {
     const project = projects.value.find((p) => p.id === projectId)
     const column = project?.columns.find((c) => c.id === columnId)
     const card = column?.cards.find((card) => card.id === cardId)
     if (card) {
       card.title = title
-      card.description = description
       saveProjectsToLocalStorage()
     }
   }
@@ -130,9 +117,9 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   const deleteColumn = (projectId: number, columnId: number) => {
-    const project = projects.value.find(p => p.id === projectId)
-    if(project){
-      project.columns = project.columns.filter(c => c.id !== columnId)
+    const project = projects.value.find((p) => p.id === projectId)
+    if (project) {
+      project.columns = project.columns.filter((c) => c.id !== columnId)
       saveProjectsToLocalStorage()
     }
   }

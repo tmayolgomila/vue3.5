@@ -23,11 +23,10 @@
 
     <draggableComponent v-model="column.cards" group="cards" itemKey="id" @end="onDragEnd">
       <template #item="{ element: card }">
-        <div class="p-2 bg-white dark:bg-neutral-800 rounded mb-2 shadow-md">
+        <div
+          class="p-2 bg-gray-50 hover:bg-gray-100 dark:bg-neutral-800 dark:hover:bg-neutral-700 rounded mb-2 shadow-md cursor-pointer"
+          @click="openCard(card.id)">
           <h4 class="font-semibold">{{ card.title }}</h4>
-          <p>{{ card.description }}</p>
-          <button @click="editCard(card.id)" class="text-blue-500"><ion-icon name="create-outline"></ion-icon></button>
-          <button @click="deleteCard(card.id)" class="text-red-500">Delete</button>
         </div>
       </template>
     </draggableComponent>
@@ -47,7 +46,6 @@
 import draggableComponent from 'vuedraggable';
 import ColumnModal from './ColumnModal.vue';
 import { ref, watch } from 'vue';
-
 
 const props = defineProps({
   column: {
@@ -93,21 +91,18 @@ const addCard = () => {
   emits('addCard', props.column.id)
 }
 
-const editCard = (cardId: number) => {
-  emits('editCard', { columnId: props.column.id, cardId })
-}
 
-const deleteCard = (cardId: number) => {
-  emits('deleteCard', { columnId: props.column.id, cardId })
-}
-
-const onDragEnd = (event: any) => {
+const onDragEnd = (event: { to: HTMLElement; item: HTMLElement; newIndex: number }) => {
   emits('dragCard', {
     fromColumnId: props.column.id,
     toColumnId: event.to.dataset.columnId,
     cardId: event.item.dataset.cardId,
     newIndex: event.newIndex,
   })
+}
+
+const openCard = (id: number) => {
+  alert(id)
 }
 
 watch(() => props.column.name, (newName) => {
