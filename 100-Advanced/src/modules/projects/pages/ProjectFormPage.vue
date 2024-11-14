@@ -6,28 +6,16 @@
     <form @submit.prevent="handleSubmit">
       <div class="mb-4">
         <label for="name" class="block text-gray-600">Project Name</label>
-        <input
-          v-model="projectData.name"
-          type="text"
-          id="name"
-          class="w-full border rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
-          required
-        />
+        <input v-model="projectData.name" type="text" id="name"
+          class="w-full border rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 text-black" required />
       </div>
       <div class="mb-4">
         <label for="description" class="block text-gray-600">Description</label>
-        <textarea
-          v-model="projectData.description"
-          id="description"
-          class="w-full border rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
-          rows="3"
-          required
-        ></textarea>
+        <textarea v-model="projectData.description" id="description"
+          class="w-full border rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 text-black" rows="3"
+          required></textarea>
       </div>
-      <button
-        type="submit"
-        class="bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-md py-2 px-4 w-full"
-      >
+      <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-md py-2 px-4 w-full">
         {{ isEditing ? 'Update Project' : 'Create Project' }}
       </button>
     </form>

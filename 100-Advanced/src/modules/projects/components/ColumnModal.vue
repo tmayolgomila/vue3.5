@@ -1,10 +1,9 @@
 <template>
-  <div class="bg-white dark:bg-slate-600 p-6 rounded shadow-md w-64 absolute"
+  <div class="bg-white dark:bg-zinc-700 p-6 rounded shadow-md w-64 absolute ease-in-out duration-300"
     :style="{ top: `${position.top}px`, left: `${position.left}px`, position: 'absolute', zIndex: 50 }">
 
-    <button @click="handleDelete" class="text-red-500">Remove List<ion-icon
-        name="close-circle-outline"></ion-icon></button>
-    <button @click="$emit('close')">Cancel <ion-icon name="close-outline"></ion-icon></button>
+    <button @click="handleDelete" class="text-red-500">Remove List</button>
+    <button @click="$emit('close')">Cancel</button>
   </div>
 </template>
 <script setup lang="ts">

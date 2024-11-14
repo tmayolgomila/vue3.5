@@ -1,6 +1,6 @@
 <template>
 
-  <div class="p-4 shadow w-64 h-full bg-white dark:bg-neutral-900" ref="columnContainer">
+  <div class="p-2 shadow w-80 h-full bg-white dark:bg-neutral-900" ref="columnContainer">
 
     <div class="flex items-center justify-between mb-2">
 
@@ -32,7 +32,8 @@
       </template>
     </draggableComponent>
 
-    <button @click="addCard" class="text-blue-500 mt-2">Add New Card</button>
+    <button @click="addCard" class="text-blue-500 mt-2"><ion-icon name="add-outline"></ion-icon>&nbsp; Add New
+      Card</button>
 
     <ColumnModal v-if="showModal" :columnId="column.id" :position="modalPosition" @deleteColumn="deleteColumn"
       @close="showModal = false" />
