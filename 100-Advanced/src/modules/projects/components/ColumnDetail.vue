@@ -25,8 +25,8 @@
       <template #item="{ element: card }">
         <div
           class="p-2 bg-gray-50 hover:bg-gray-100 dark:bg-neutral-800 dark:hover:bg-neutral-700 rounded mb-2 shadow-md cursor-pointer"
-          @click="openCard(card.id)">
-          <h4 class="font-semibold">{{ card.title }}</h4>
+          @click="openCard(card.id, card.title)">
+          <h4 class="font-semibold capitalize">{{ card.title }}</h4>
         </div>
       </template>
     </draggableComponent>
@@ -40,41 +40,63 @@
 
   </div>
 
+  <CardDetail v-if="internalIsModalOpen" :key="`${selectedCardId}-${selectedCardTitle}`" :cardId="selectedCardId"
+    :cardTitle="selectedCardTitle" @updateTitle="updateCardTitle" @close="closeCardDetail" />
+
+
+
 </template>
 
 <script lang="ts" setup>
+import { useProjectStore } from '../store/projectStore';
+import { computed, ref } from 'vue';
+
 import draggableComponent from 'vuedraggable';
 import ColumnModal from './ColumnModal.vue';
-import { ref, watch } from 'vue';
+import CardDetail from './CardDetail.vue';
+
 
 const props = defineProps({
   column: {
     type: Object,
-    required: true
+    required: true,
+  },
+  columnId: {
+    type: Number,
+    required: true,
+  },
+  projectId: {
+    type: Number,
+    required: true,
   }
 })
 
+const projectStore = useProjectStore()
 const showModal = ref(false)
 const modalPosition = ref({ top: 0, left: 0 })
 const isEditing = ref(false)
-const editedColumnName = ref(props.column.name)
+const editedColumnName = computed(() => props.column.name);
+
+
+const selectedCardId = ref(0)
+const selectedCardTitle = ref('')
 
 const emits = defineEmits(['addCard', 'editCard', 'deleteCard', 'dragCard', 'editColumn', 'deleteColumn'])
 
 const openModal = (event: MouseEvent) => {
-
   const columnContainer = (event.currentTarget as HTMLElement).closest('.p-2')
   const rect = columnContainer?.getBoundingClientRect()
   if (rect) {
     modalPosition.value = { top: rect.top, left: rect.left }
   }
-
   showModal.value = true
 }
+
 //start edition
 const editColumn = () => {
   isEditing.value = true
 };
+
 //save new name for column
 const saveColumnEdit = () => {
   if (editedColumnName.value.trim() !== props.column.name) {
@@ -91,7 +113,6 @@ const addCard = () => {
   emits('addCard', props.column.id)
 }
 
-
 const onDragEnd = (event: { to: HTMLElement; item: HTMLElement; newIndex: number }) => {
   emits('dragCard', {
     fromColumnId: props.column.id,
@@ -101,12 +122,25 @@ const onDragEnd = (event: { to: HTMLElement; item: HTMLElement; newIndex: number
   })
 }
 
-const openCard = (id: number) => {
-  alert(id)
-}
+const internalIsModalOpen = ref(false);
 
-watch(() => props.column.name, (newName) => {
-  editedColumnName.value = newName
-})
+const openCard = (cardId: number, cardTitle: string) => {
+  selectedCardId.value = cardId;
+  selectedCardTitle.value = cardTitle;
+  internalIsModalOpen.value = true;
+};
+
+const closeCardDetail = () => {
+  internalIsModalOpen.value = false;
+  selectedCardId.value = 0;
+  selectedCardTitle.value = '';
+};
+
+const updateCardTitle = (newTitle: string) => {
+  if (selectedCardTitle.value) {
+    projectStore.editCardInColumn(props.projectId, props.columnId, selectedCardId.value, newTitle)
+    selectedCardTitle.value = newTitle
+  }
+}
 
 </script>

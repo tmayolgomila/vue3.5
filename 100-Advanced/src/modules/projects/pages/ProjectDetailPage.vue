@@ -6,9 +6,9 @@
       <div class="flex space-x-4 items-start">
         <!-- Columnas -->
         <div class="flex space-x-4">
-          <ColumnDetail v-for="column in project.columns" :key="column.id" :column="column" @addCard="handleAddCard"
-            @editCard="handleEditCard" @deleteCard="handleDeleteCard" @dragCard="handleDragCard"
-            @editColumn="handleEditColumn" @deleteColumn="handleDeleteColumn" />
+          <ColumnDetail v-for="column in project.columns" :key="column.id" :column="column" :columnId="column.id"
+            :projectId="projectId" @addCard="handleAddCard" @editCard="handleEditCard" @deleteCard="handleDeleteCard"
+            @dragCard="handleDragCard" @editColumn="handleEditColumn" @deleteColumn="handleDeleteColumn" />
         </div>
         <!-- Botón Add New Column alineado en la parte superior derecha -->
         <button @click="addColumn"
@@ -28,7 +28,7 @@
 import { useRoute } from 'vue-router';
 import ColumnDetail from '../components/ColumnDetail.vue';
 import { useProjectStore } from '../store/projectStore';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 
 const route = useRoute()
 const projectStore = useProjectStore()
