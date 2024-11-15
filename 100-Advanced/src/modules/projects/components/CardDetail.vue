@@ -13,30 +13,48 @@
         <input v-else v-model="editableTitle" @blur="saveTitle" @keydown.enter="saveTitle"
           class="text-xl font-semibold rounded w-2/4 p-1 darl:bg-neutral-800 text-black" placeholder="Edit title"
           autofocus />
-      </div>
 
+        <div class="mt-4">
+          <label for="description" class="block font-medium">Description:</label>
+          <textarea id="description" v-model="cardDescription" @blur="saveDescription" @keydown.enter="saveDescription"
+            class="w-full rounded p-2 dark:bg-neutral-800" rows="3" placeholder="Enter description"></textarea>
+        </div>
+      </div>
     </div>
   </div>
-
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 const props = defineProps({
+  cardId: {
+    type: Number,
+    required: true
+  },
   cardTitle: {
     type: String,
     required: true
   },
-  cardId: {
+  columnId: {
     type: Number,
     required: true
+  },
+  projectId: {
+    type: Number,
+    required: true
+  },
+  cardDescription: {
+    type: String,
+    required: false,
+    default: '',
   }
 })
 
-const emit = defineEmits(['updateTitle', 'close'])
+const emit = defineEmits(['updateTitle', 'updateDescription', 'close'])
 const isEditingTitle = ref(false)
 const editableTitle = ref(props.cardTitle)
+const cardDescription = ref(props.cardDescription)
 
 const enableEditing = () => {
   isEditingTitle.value = true
@@ -49,8 +67,17 @@ const saveTitle = () => {
   }
 }
 
+const saveDescription = () => {
+  emit('updateDescription', cardDescription.value)
+}
+
+
 const closeModal = () => {
   emit('close');
 };
+
+watch(() => props.cardDescription, (newDescription) => {
+  cardDescription.value = newDescription
+})
 
 </script>

@@ -25,7 +25,7 @@
       <template #item="{ element: card }">
         <div
           class="p-2 bg-gray-50 hover:bg-gray-100 dark:bg-neutral-800 dark:hover:bg-neutral-700 rounded mb-2 shadow-md cursor-pointer"
-          @click="openCard(card.id, card.title)">
+          @click="openCard(card.id, card.title, card.description)">
           <h4 class="font-semibold capitalize">{{ card.title }}</h4>
         </div>
       </template>
@@ -41,7 +41,9 @@
   </div>
 
   <CardDetail v-if="internalIsModalOpen" :key="`${selectedCardId}-${selectedCardTitle}`" :cardId="selectedCardId"
-    :cardTitle="selectedCardTitle" @updateTitle="updateCardTitle" @close="closeCardDetail" />
+    :cardTitle="selectedCardTitle" :columnId="props.columnId" :projectId="props.projectId"
+    :cardDescription="selectedCardDescription" @updateTitle="updateCardTitle" @updateDescription="updateCardDescription"
+    @close="closeCardDetail" />
 
 
 
@@ -80,6 +82,7 @@ const editedColumnName = computed(() => props.column.name);
 
 const selectedCardId = ref(0)
 const selectedCardTitle = ref('')
+const selectedCardDescription = ref('')
 
 const emits = defineEmits(['addCard', 'editCard', 'deleteCard', 'dragCard', 'editColumn', 'deleteColumn'])
 
@@ -124,10 +127,11 @@ const onDragEnd = (event: { to: HTMLElement; item: HTMLElement; newIndex: number
 
 const internalIsModalOpen = ref(false);
 
-const openCard = (cardId: number, cardTitle: string) => {
+const openCard = (cardId: number, cardTitle: string, cardDescription: string) => {
   selectedCardId.value = cardId;
   selectedCardTitle.value = cardTitle;
   internalIsModalOpen.value = true;
+  selectedCardDescription.value = cardDescription || ''
 };
 
 const closeCardDetail = () => {
@@ -142,5 +146,11 @@ const updateCardTitle = (newTitle: string) => {
     selectedCardTitle.value = newTitle
   }
 }
+
+const updateCardDescription = (newDescription: string) => {
+  selectedCardDescription.value = newDescription;
+}
+
+
 
 </script>
