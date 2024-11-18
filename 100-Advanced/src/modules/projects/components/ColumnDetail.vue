@@ -34,7 +34,7 @@
     <!-- Input for new card -->
     <div v-if="isAddingCard" class="mb-2">
       <input type="text" v-model="newCardTitle" @blur="cancelAddCard" @keydown.enter="saveNewCard"
-        class="w-full p-2 border rounded text-black" placeholder="Enter card title" autofocus />
+        class="w-full p-2 border rounded text-black new-card-input" placeholder="Enter card title" autofocus />
     </div>
 
     <button @click="startAddCard" class=" mt-2 flex items-center space-x-1">
@@ -49,13 +49,13 @@
   <CardDetail v-if="internalIsModalOpen" :key="`${selectedCardId}-${selectedCardTitle}`" :cardId="selectedCardId"
     :cardTitle="selectedCardTitle" :columnId="props.columnId" :projectId="props.projectId"
     :cardDescription="selectedCardDescription" @updateTitle="updateCardTitle" @updateDescription="updateCardDescription"
-    @close="closeCardDetail" />
+    @deleteCard="handleDeleteCard" @close="closeCardDetail" />
 
 </template>
 
 <script lang="ts" setup>
 import { useProjectStore } from '../store/projectStore';
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 
 import draggableComponent from 'vuedraggable';
 import ColumnModal from './ColumnModal.vue';
@@ -130,6 +130,13 @@ const onDragEnd = (event: { to: HTMLElement; item: HTMLElement; newIndex: number
 const startAddCard = () => {
   isAddingCard.value = true
   newCardTitle.value = ''
+
+  nextTick(() => {
+    const inputElement = document.querySelector('.new-card-input') as HTMLInputElement;
+    if (inputElement) {
+      inputElement.focus()
+    }
+  })
 }
 
 const saveNewCard = () => {
@@ -172,6 +179,11 @@ const updateCardDescription = (newDescription: string) => {
 
   selectedCardDescription.value = newDescription
 
+}
+
+const handleDeleteCard = (projectId: number, columnId: number, cardId: number) => {
+  projectStore.deleteCardFromColumn(projectId, columnId, cardId)
+  internalIsModalOpen.value = false
 }
 
 </script>
