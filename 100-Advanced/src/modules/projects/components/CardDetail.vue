@@ -68,9 +68,12 @@ const saveTitle = () => {
 }
 
 const saveDescription = () => {
-  emit('updateDescription', cardDescription.value)
-}
+  if (cardDescription.value !== props.cardDescription) {
+    emit('updateDescription', cardDescription.value)
+  }
 
+
+}
 
 const closeModal = () => {
   emit('close');

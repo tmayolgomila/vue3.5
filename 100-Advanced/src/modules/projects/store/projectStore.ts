@@ -78,7 +78,7 @@ export const useProjectStore = defineStore('project', () => {
     }
   }
 
-  const addDescriptionToCard = (
+  const setCardDescription = (
     projectId: number,
     columnId: number,
     cardId: number,
@@ -89,21 +89,6 @@ export const useProjectStore = defineStore('project', () => {
     const card = column?.cards.find((card) => card.id === cardId)
     if (card) {
       card.description = description
-      saveProjectsToLocalStorage()
-    }
-  }
-
-  const updateCardDescription = (
-    projectId: number,
-    columnId: number,
-    cardId: number,
-    newDescription: string,
-  ) => {
-    const project = projects.value.find((p) => p.id === projectId)
-    const column = project?.columns.find((c) => c.id === columnId)
-    const card = column?.cards.find((card) => card.id === cardId)
-    if (card) {
-      card.description = newDescription
       saveProjectsToLocalStorage()
     }
   }
@@ -169,7 +154,6 @@ export const useProjectStore = defineStore('project', () => {
     moveCard,
     updateColumnName,
     deleteColumn,
-    addDescriptionToCard,
-    updateCardDescription,
+    setCardDescription,
   }
 })

@@ -7,8 +7,8 @@
         <!-- Columnas -->
         <div class="flex space-x-4">
           <ColumnDetail v-for="column in project.columns" :key="column.id" :column="column" :columnId="column.id"
-            :projectId="projectId" @addCard="handleAddCard" @editCard="handleEditCard" @deleteCard="handleDeleteCard"
-            @dragCard="handleDragCard" @editColumn="handleEditColumn" @deleteColumn="handleDeleteColumn" />
+            :projectId="projectId" @editCard="handleEditCard" @deleteCard="handleDeleteCard" @dragCard="handleDragCard"
+            @editColumn="handleEditColumn" @deleteColumn="handleDeleteColumn" />
         </div>
         <!-- Botón Add New Column alineado en la parte superior derecha -->
         <button @click="addColumn"
@@ -28,7 +28,7 @@
 import { useRoute } from 'vue-router';
 import ColumnDetail from '../components/ColumnDetail.vue';
 import { useProjectStore } from '../store/projectStore';
-import { computed, watch } from 'vue';
+import { computed } from 'vue';
 
 const route = useRoute()
 const projectStore = useProjectStore()
@@ -52,13 +52,6 @@ const handleDeleteColumn = (columnId: number) => {
   const confirmDelete = confirm('Are you sure you want to delete this column?')
   if (confirmDelete) {
     projectStore.deleteColumn(projectId, columnId)
-  }
-}
-
-const handleAddCard = (columnId: number) => {
-  const cardTitle = prompt('Enter card title')
-  if (cardTitle) {
-    projectStore.addCardToColumn(projectId, columnId, cardTitle)
   }
 }
 

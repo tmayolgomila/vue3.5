@@ -31,7 +31,13 @@
       </template>
     </draggableComponent>
 
-    <button @click="addCard" class=" mt-2 flex items-center space-x-1">
+    <!-- Input for new card -->
+    <div v-if="isAddingCard" class="mb-2">
+      <input type="text" v-model="newCardTitle" @blur="cancelAddCard" @keydown.enter="saveNewCard"
+        class="w-full p-2 border rounded text-black" placeholder="Enter card title" autofocus />
+    </div>
+
+    <button @click="startAddCard" class=" mt-2 flex items-center space-x-1">
       <ion-icon name="add-outline"></ion-icon><span>Add New Card</span>
     </button>
 
@@ -44,8 +50,6 @@
     :cardTitle="selectedCardTitle" :columnId="props.columnId" :projectId="props.projectId"
     :cardDescription="selectedCardDescription" @updateTitle="updateCardTitle" @updateDescription="updateCardDescription"
     @close="closeCardDetail" />
-
-
 
 </template>
 
@@ -77,12 +81,13 @@ const projectStore = useProjectStore()
 const showModal = ref(false)
 const modalPosition = ref({ top: 0, left: 0 })
 const isEditing = ref(false)
+const isAddingCard = ref(false);
+const newCardTitle = ref('')
 const editedColumnName = computed(() => props.column.name);
-
-
 const selectedCardId = ref(0)
 const selectedCardTitle = ref('')
 const selectedCardDescription = ref('')
+const internalIsModalOpen = ref(false);
 
 const emits = defineEmits(['addCard', 'editCard', 'deleteCard', 'dragCard', 'editColumn', 'deleteColumn'])
 
@@ -112,10 +117,6 @@ const deleteColumn = () => {
   emits('deleteColumn', props.column.id);
 };
 
-const addCard = () => {
-  emits('addCard', props.column.id)
-}
-
 const onDragEnd = (event: { to: HTMLElement; item: HTMLElement; newIndex: number }) => {
   emits('dragCard', {
     fromColumnId: props.column.id,
@@ -125,13 +126,31 @@ const onDragEnd = (event: { to: HTMLElement; item: HTMLElement; newIndex: number
   })
 }
 
-const internalIsModalOpen = ref(false);
+// Add a new card
+const startAddCard = () => {
+  isAddingCard.value = true
+  newCardTitle.value = ''
+}
+
+const saveNewCard = () => {
+  if (newCardTitle.value.trim() !== '') {
+    projectStore.addCardToColumn(props.projectId, props.columnId, newCardTitle.value)
+  }
+  isAddingCard.value = false
+}
+
+const cancelAddCard = () => {
+  if (newCardTitle.value.trim() === '') {
+    isAddingCard.value = false
+  }
+}
 
 const openCard = (cardId: number, cardTitle: string, cardDescription: string) => {
   selectedCardId.value = cardId;
   selectedCardTitle.value = cardTitle;
   internalIsModalOpen.value = true;
   selectedCardDescription.value = cardDescription || ''
+  console.log(cardDescription)
 };
 
 const closeCardDetail = () => {
@@ -148,9 +167,11 @@ const updateCardTitle = (newTitle: string) => {
 }
 
 const updateCardDescription = (newDescription: string) => {
-  selectedCardDescription.value = newDescription;
+
+  projectStore.setCardDescription(props.projectId, props.columnId, selectedCardId.value, newDescription)
+
+  selectedCardDescription.value = newDescription
+
 }
-
-
 
 </script>
