@@ -10,6 +10,7 @@ interface Column {
   id: number
   name: string
   cards: Card[]
+  color?: string
 }
 interface Project {
   id: number
@@ -49,10 +50,10 @@ export const useProjectStore = defineStore('project', () => {
     saveProjectsToLocalStorage()
   }
 
-  const addColumnToProject = (projectId: number, columnName: string) => {
+  const addColumnToProject = (projectId: number, columnName: string, cards: Card[] = []) => {
     const project = projects.value.find((p) => p.id === projectId)
     if (project) {
-      const newColumn: Column = { id: Date.now(), name: columnName, cards: [] }
+      const newColumn: Column = { id: Date.now(), name: columnName, cards }
       project.columns.push(newColumn)
       saveProjectsToLocalStorage()
     }
@@ -155,5 +156,6 @@ export const useProjectStore = defineStore('project', () => {
     updateColumnName,
     deleteColumn,
     setCardDescription,
+    saveProjectsToLocalStorage,
   }
 })

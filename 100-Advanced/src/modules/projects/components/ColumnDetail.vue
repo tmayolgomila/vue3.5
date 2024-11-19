@@ -1,6 +1,7 @@
 <template>
 
-  <div class="p-2 shadow w-80 h-full bg-white dark:bg-neutral-900" ref="columnContainer">
+  <div :class="`${column.color || 'bg-white'} dark: ${column.color || 'dark:bg-neutral-900'} p-2 shadow w-80 h-full`"
+    ref="columnContainer">
 
     <div class="flex items-center justify-between mb-2">
 
@@ -14,8 +15,8 @@
             class="text-lg font-semibold border-b text-black w-4/6" autofocus>
         </template>
       </div>
-      <!--Edit title END-->
 
+      <!--Edit title END-->
       <button @click="openModal">
         <ion-icon size="large" name="ellipsis-horizontal-outline"></ion-icon>
       </button>
@@ -41,8 +42,8 @@
       <ion-icon name="add-outline"></ion-icon><span>Add New Card</span>
     </button>
 
-    <ColumnModal v-if="showModal" :columnId="column.id" :position="modalPosition" @deleteColumn="deleteColumn"
-      @close="showModal = false" />
+    <ColumnModal v-if="showModal" :columnId="column.id" :position="modalPosition" @addCard="startAddCard"
+      @deleteColumn="deleteColumn" @close="showModal = false" @copyList="copyList" @changeColor="updateColumnColor" />
 
   </div>
 
@@ -55,7 +56,7 @@
 
 <script lang="ts" setup>
 import { useProjectStore } from '../store/projectStore';
-import { computed, nextTick, ref } from 'vue';
+import { nextTick, ref, watch } from 'vue';
 
 import draggableComponent from 'vuedraggable';
 import ColumnModal from './ColumnModal.vue';
@@ -83,7 +84,7 @@ const modalPosition = ref({ top: 0, left: 0 })
 const isEditing = ref(false)
 const isAddingCard = ref(false);
 const newCardTitle = ref('')
-const editedColumnName = computed(() => props.column.name);
+const editedColumnName = ref(props.column.name)
 const selectedCardId = ref(0)
 const selectedCardTitle = ref('')
 const selectedCardDescription = ref('')
@@ -174,16 +175,45 @@ const updateCardTitle = (newTitle: string) => {
 }
 
 const updateCardDescription = (newDescription: string) => {
-
   projectStore.setCardDescription(props.projectId, props.columnId, selectedCardId.value, newDescription)
-
   selectedCardDescription.value = newDescription
-
 }
 
 const handleDeleteCard = (projectId: number, columnId: number, cardId: number) => {
   projectStore.deleteCardFromColumn(projectId, columnId, cardId)
   internalIsModalOpen.value = false
 }
+
+const copyList = () => {
+  const clonedColumn = {
+    ...props.column,
+    id: Date.now(),
+    name: `${props.column.name} (Copy)`,
+    cards: props.column.cards.map(card => ({ ...card, id: Date.now() + Math.random() }))
+  }
+
+  projectStore.addColumnToProject(props.projectId, clonedColumn.name) //Create the new column
+  const newColumn = projectStore.projects.find(project => project.id === props.projectId)?.columns.find(column => column.name === clonedColumn.name)
+  if (newColumn) {
+    newColumn.cards = clonedColumn.cards //Assign cloned cards
+    projectStore.saveProjectsToLocalStorage() //Save changes
+  }
+}
+
+const updateColumnColor = ({ columnId, color }: { columnId: number; color: string }) => {
+
+  const column = projectStore.projects.find(project => project.id === props.projectId)?.columns.find(column => column.id === columnId)
+
+  if (column) {
+    column.color = color
+    projectStore.saveProjectsToLocalStorage()
+  }
+
+}
+
+watch(() => props.column.name, (newName) => {
+  editedColumnName.value = newName
+})
+
 
 </script>

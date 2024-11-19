@@ -1,5 +1,6 @@
 <template>
   <div class="flex flex-col h-screen bg-white dark:bg-black">
+
     <!-- Header -->
     <header class="flex items-center h-14 px-4 border-b border-gray-300 sm:h-16 md:px-6 lg:px-8">
       <div>
@@ -22,7 +23,6 @@
           </label>
         </div>
       </nav>
-
     </header>
     <!-- Fin Header -->
 
@@ -39,6 +39,7 @@
       </p>
     </footer>
     <!-- Fin Footer -->
+
   </div>
 </template>
 
@@ -59,6 +60,7 @@ const toggleDarkMode = () => {
 }
 
 onMounted(() => {
+
   if (localStorage.getItem('darkMode') == 'true') {
     document.body.classList.add('dark')
     isDarkMode.value = true
