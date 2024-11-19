@@ -16,19 +16,21 @@
 
         <!-- Botón Add New Column alineado en la parte superior derecha -->
         <div class="flex items-center">
+
           <div v-if="isAddingColumn" class="relative flex items-center">
             <input type="text" v-model="newColumnName" @blur="handleBlur" @keyup.enter="saveNewColumn"
               placeholder="Enter column title" class="text-black border rounded px-2 py-1 new-column-input" autofocus />
             <button @click="saveNewColumn" class="ml-2 bg-blue-500 text-white font-bold py-1 px-3 rounded">
               Save
             </button>
-
           </div>
+
           <button v-else @click="startNewColumn"
             class="flex items-center space-x-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full h-12">
             <ion-icon name="add-outline"></ion-icon>
             <span>Add New Column</span>
           </button>
+
         </div>
 
       </div>

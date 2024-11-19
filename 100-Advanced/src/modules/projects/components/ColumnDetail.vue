@@ -42,8 +42,9 @@
       <ion-icon name="add-outline"></ion-icon><span>Add New Card</span>
     </button>
 
-    <ColumnModal v-if="showModal" :columnId="column.id" :position="modalPosition" @addCard="startAddCard"
-      @deleteColumn="deleteColumn" @close="showModal = false" @copyList="copyList" @changeColor="updateColumnColor" />
+    <ColumnModal v-if="showModal" :columnId="column.id" :position="modalPosition" :projectId="props.projectId"
+      @addCard="startAddCard" @deleteColumn="deleteColumn" @close="showModal = false" @copyList="copyList"
+      @changeColor="updateColumnColor" />
 
   </div>
 

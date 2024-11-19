@@ -6,7 +6,7 @@ interface Card {
   title: string
   description: string
 }
-interface Column {
+export interface Column {
   id: number
   name: string
   cards: Card[]

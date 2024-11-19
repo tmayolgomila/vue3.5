@@ -45,11 +45,20 @@
     message="Are you sure you want to delete this list? This action cannot be undone." confirmAction="Delete List"
     @confirm="confirmDelete" @cancel="cancelDelete" />
 
+  <MoveCardModal v-if="showMoveCardsModal" :columnId="props.columnId"
+    :allColumns="projectStore.projects.find(project => project.id === props.projectId)?.columns || []"
+    @moveCardsToColumn="handleMoveCardsToColumn" @close="showMoveCardsModal = false" />
+
 </template>
 
 <script setup lang="ts">
+
 import { ref } from 'vue';
 import ConfirmModal from './ConfirmModal.vue';
+import MoveCardModal from './MoveCardModal.vue';
+import { useProjectStore } from '../store/projectStore';
+
+const projectStore = useProjectStore()
 
 const props = defineProps({
   columnId: {
@@ -59,13 +68,18 @@ const props = defineProps({
   position: {
     type: Object,
     required: true,
-    validator: (val: any) => 'top' in val && 'left' in val,
+    validator: (val: object) => 'top' in val && 'left' in val,
+  },
+  projectId: {
+    type: Number,
+    required: true
   }
 })
 
 const emits = defineEmits(['addCard', 'deleteColumn', 'close', 'copyList', 'changeColor'])
 
 const showDeleteModal = ref(false)
+const showMoveCardsModal = ref(false)
 
 const addCard = () => {
   emits('close')
@@ -92,8 +106,21 @@ const changeColor = (color: string) => {
 }
 
 const moveAllCardsToOtherList = () => {
-  emits('close')
+  showMoveCardsModal.value = true;
 }
+
+const handleMoveCardsToColumn = (targetColumnId: number) => {
+  emits('close')
+  const sourceColumn = projectStore.projects.find(project => project.id === props.projectId)?.columns.find(column => column.id === props.columnId);
+  const targetColumn = projectStore.projects.find(project => project.id === props.projectId)?.columns.find(column => column.id === targetColumnId);
+
+  if (sourceColumn && targetColumn) {
+    targetColumn.cards.push(...sourceColumn.cards);
+    sourceColumn.cards = [];
+    projectStore.saveProjectsToLocalStorage();
+  }
+
+};
 
 </script>
 
