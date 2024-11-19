@@ -16,12 +16,21 @@
       <button>Follow</button>
       <button>Change column color</button>
       <button>Remove color</button>
-      <button @click="handleDelete" class="text-red-500">Remove List</button>
+      <button @click="showDeleteModal = true" class="text-red-500">Remove List</button>
     </div>
 
   </div>
+
+  <ConfirmModal v-if="showDeleteModal" title="Delete List"
+    message="Are you sure you want to delete this list? This action cannot be undone." confirmAction="Delete List"
+    @confirm="confirmDelete" @cancel="cancelDelete" />
+
 </template>
+
 <script setup lang="ts">
+import { ref } from 'vue';
+import ConfirmModal from './ConfirmModal.vue';
+
 
 const props = defineProps({
   columnId: {
@@ -37,8 +46,15 @@ const props = defineProps({
 
 const emits = defineEmits(['deleteColumn', 'close'])
 
-const handleDelete = () => {
+const showDeleteModal = ref(false)
+
+const confirmDelete = () => {
   emits('deleteColumn', props.columnId)
+  showDeleteModal.value = false
+}
+
+const cancelDelete = () => {
+  showDeleteModal.value = false
 }
 
 </script>

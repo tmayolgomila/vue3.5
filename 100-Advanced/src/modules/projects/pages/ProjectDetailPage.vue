@@ -91,10 +91,7 @@ const handleEditColumn = ({ columnId, newName }: { columnId: number; newName: st
 
 
 const handleDeleteColumn = (columnId: number) => {
-  const confirmDelete = confirm('Are you sure you want to delete this column?')
-  if (confirmDelete) {
-    projectStore.deleteColumn(projectId, columnId)
-  }
+  projectStore.deleteColumn(projectId, columnId)
 }
 
 const handleEditCard = ({ columnId, cardId }: { columnId: number, cardId: number }) => {
