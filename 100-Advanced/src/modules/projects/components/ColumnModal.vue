@@ -1,6 +1,6 @@
 <template>
   <div class="absolute bg-white dark:bg-slate-800 p-6 rounded shadow-md w-80 column"
-    :style="{ top: `${position.top}px`, left: `${position.left}px`, position: 'absolute', zIndex: 50 }">
+    :style="{ top: `${position.top}px`, left: `${position.left}px`, position: 'absolute', zIndex: 40 }">
 
 
     <button @click="$emit('close')" class="absolute top-2 right-2"><ion-icon size="large"
@@ -12,14 +12,7 @@
       <button class="text-lg" @click="copyList">Copy List</button>
       <button class="text-lg" @click="moveAllCardsToOtherList">Move all card list to another</button>
 
-      <h2 class="text-lg font-semibold">Sort by:</h2>
-
-      <select class="text-lg p-2 boredr rounded text-black" v-model="currentSort" @change="onSortChange">
-        <option class="text-black" value="title:asc">Title (A-Z)</option>
-        <option class="text-black" value="title:desc">Title (Z-A)</option>
-        <option class="text-black" value="id:asc">Date (Ascending)</option>
-        <option class="text-black" value="id:desc">Date (Descending)</option>
-      </select>
+      <button class="text-lg" @click="showSortModal = true;">Sort by</button>
 
       <button class="text-lg">Follow</button>
 
@@ -58,6 +51,8 @@
     :allColumns="projectStore.projects.find(project => project.id === props.projectId)?.columns || []"
     @moveCardsToColumn="handleMoveCardsToColumn" @close="showMoveCardsModal = false" />
 
+  <SortModal :isVisible="showSortModal" @close="showSortModal = false" @selectSort="onSortChange" />
+
 </template>
 
 <script setup lang="ts">
@@ -66,6 +61,7 @@ import { ref } from 'vue';
 import ConfirmModal from './ConfirmModal.vue';
 import MoveCardModal from './MoveCardModal.vue';
 import { useProjectStore } from '../store/projectStore';
+import SortModal from './SortModal.vue';
 
 const projectStore = useProjectStore()
 
@@ -89,7 +85,7 @@ const emits = defineEmits(['addCard', 'deleteColumn', 'close', 'copyList', 'chan
 
 const showDeleteModal = ref(false)
 const showMoveCardsModal = ref(false)
-const currentSort = ref('title:asc')
+const showSortModal = ref(false)
 
 const addCard = () => {
   emits('close')
@@ -129,7 +125,6 @@ const handleMoveCardsToColumn = (targetColumnId: number) => {
     sourceColumn.cards = [];
     projectStore.saveProjectsToLocalStorage();
   }
-
 };
 
 const sortCards = (sortBy: 'title' | 'id', order: 'asc' | 'desc') => {
@@ -137,8 +132,8 @@ const sortCards = (sortBy: 'title' | 'id', order: 'asc' | 'desc') => {
   emits('close')
 };
 
-const onSortChange = () => {
-  const [field, order] = currentSort.value.split(':')
+const onSortChange = (sortOption: string) => {
+  const [field, order] = sortOption.split(':')
   sortCards(field as 'title' | 'id', order as 'asc' | 'desc')
 }
 
