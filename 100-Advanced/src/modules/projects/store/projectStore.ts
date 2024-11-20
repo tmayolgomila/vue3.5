@@ -124,6 +124,28 @@ export const useProjectStore = defineStore('project', () => {
     }
   }
 
+  const sortCardsInColumn = (
+    projectId: number,
+    columnId: number,
+    sortBy: 'title' | 'id',
+    order: 'asc' | 'desc',
+  ) => {
+    const project = projects.value.find((p) => p.id === projectId)
+    const column = project?.columns.find((c) => c.id === columnId)
+
+    if (column) {
+      column.cards.sort((a, b) => {
+        if (sortBy === 'title') {
+          return order === 'asc' ? a.title.localeCompare(b.title) : b.title.localeCompare(a.title)
+        } else if (sortBy === 'id') {
+          return order === 'asc' ? a.id - b.id : b.id - a.id
+        }
+        return 0
+      })
+      saveProjectsToLocalStorage()
+    }
+  }
+
   const updateColumnName = (projectId: number, columnId: number, newName: string) => {
     const project = projects.value.find((p) => p.id === projectId)
     const column = project?.columns.find((c) => c.id === columnId)
@@ -157,5 +179,6 @@ export const useProjectStore = defineStore('project', () => {
     deleteColumn,
     setCardDescription,
     saveProjectsToLocalStorage,
+    sortCardsInColumn,
   }
 })

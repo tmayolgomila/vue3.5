@@ -11,7 +11,16 @@
       <button class="text-lg" @click="addCard">Add Card</button>
       <button class="text-lg" @click="copyList">Copy List</button>
       <button class="text-lg" @click="moveAllCardsToOtherList">Move all card list to another</button>
-      <button class="text-lg">Sort by</button>
+
+      <h2 class="text-lg font-semibold">Sort by:</h2>
+
+      <select class="text-lg p-2 boredr rounded text-black" v-model="currentSort" @change="onSortChange">
+        <option class="text-black" value="title:asc">Title (A-Z)</option>
+        <option class="text-black" value="title:desc">Title (Z-A)</option>
+        <option class="text-black" value="id:asc">Date (Ascending)</option>
+        <option class="text-black" value="id:desc">Date (Descending)</option>
+      </select>
+
       <button class="text-lg">Follow</button>
 
       <br>
@@ -80,6 +89,7 @@ const emits = defineEmits(['addCard', 'deleteColumn', 'close', 'copyList', 'chan
 
 const showDeleteModal = ref(false)
 const showMoveCardsModal = ref(false)
+const currentSort = ref('title:asc')
 
 const addCard = () => {
   emits('close')
@@ -121,6 +131,17 @@ const handleMoveCardsToColumn = (targetColumnId: number) => {
   }
 
 };
+
+const sortCards = (sortBy: 'title' | 'id', order: 'asc' | 'desc') => {
+  projectStore.sortCardsInColumn(props.projectId, props.columnId, sortBy, order);
+  emits('close')
+};
+
+const onSortChange = () => {
+  const [field, order] = currentSort.value.split(':')
+  sortCards(field as 'title' | 'id', order as 'asc' | 'desc')
+}
+
 
 </script>
 
