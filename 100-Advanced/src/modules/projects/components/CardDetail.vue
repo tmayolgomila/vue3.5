@@ -10,7 +10,7 @@
       <div class="mb-4">
         <h2 v-if="!isEditingTitle" class="text-xl font-semibold mb-4 capitalize" @dblclick="enableEditing">
           {{ cardTitle }}</h2>
-        <input v-else v-model="editableTitle" @blur="saveTitle" @keydown.enter="saveTitle"
+        <input v-else v-model="editableTitle" @keydown.enter="saveTitle"
           class="text-xl font-semibold rounded w-2/4 p-1 darl:bg-neutral-800 text-black new-title-input"
           placeholder="Edit title" autofocus />
 
@@ -29,6 +29,7 @@
 
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue';
+import { useProjectStore } from '../store/projectStore';
 
 const props = defineProps({
   cardId: {
@@ -54,6 +55,7 @@ const props = defineProps({
   }
 })
 
+const projectStore = useProjectStore()
 const emit = defineEmits(['updateTitle', 'updateDescription', 'close', 'deleteCard'])
 const isEditingTitle = ref(false)
 const editableTitle = ref(props.cardTitle)
@@ -70,18 +72,29 @@ const enableEditing = () => {
   })
 }
 
-const saveTitle = () => {
-  isEditingTitle.value = false
+const saveTitle = async () => {
+  isEditingTitle.value = false;
   if (editableTitle.value !== props.cardTitle) {
-    emit('updateTitle', editableTitle.value)
+    try {
+      await projectStore.editCardInColumn(props.cardId, editableTitle.value, undefined);
+      emit('updateTitle', editableTitle.value);
+    } catch (error) {
+      console.error('Error updating title:', error);
+    }
   }
-}
+};
 
-const saveDescription = () => {
+const saveDescription = async () => {
   if (cardDescription.value !== props.cardDescription) {
-    emit('updateDescription', cardDescription.value)
+    try {
+      await projectStore.editCardInColumn(props.cardId, undefined, cardDescription.value);
+      emit('updateDescription', cardDescription.value);
+    } catch (error) {
+      console.error('Error saving description:', error);
+    }
   }
-}
+};
+
 
 const closeModal = () => {
   emit('close');

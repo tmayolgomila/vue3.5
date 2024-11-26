@@ -2,8 +2,8 @@
   <div>
     <h2 class="text-2xl mb-4">Project List</h2>
 
-    <div v-if="projects.length > 0">
-      <ProjectCard v-for="project in projects" :key="project.id" :project="project" />
+    <div v-if="projectStore.projects.length > 0">
+      <ProjectCard v-for="project in projectStore.projects" :key="project.id" :project="project" />
     </div>
     <div v-else class="text-center mt-6">
       <p>No projects available. Add a new project to get started!</p>
@@ -19,7 +19,12 @@
 <script setup lang="ts">
 import { useProjectStore } from '../store/projectStore';
 import ProjectCard from '../components/ProjectCard.vue';
+import { onMounted } from 'vue';
 
 const projectStore = useProjectStore();
-const projects = projectStore.projects ?? [];
+
+onMounted(() => {
+  projectStore.getProjects()
+})
+
 </script>

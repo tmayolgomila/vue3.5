@@ -123,12 +123,12 @@ const handleMoveCardsToColumn = (targetColumnId: number) => {
   if (sourceColumn && targetColumn) {
     targetColumn.cards.push(...sourceColumn.cards);
     sourceColumn.cards = [];
-    projectStore.saveProjectsToLocalStorage();
+
   }
 };
 
 const sortCards = (sortBy: 'title' | 'id', order: 'asc' | 'desc') => {
-  projectStore.sortCardsInColumn(props.projectId, props.columnId, sortBy, order);
+  projectStore.sortCardsInColumn(props.columnId, sortBy, order);
   emits('close')
 };
 

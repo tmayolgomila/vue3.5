@@ -1,6 +1,8 @@
 <template>
-
-  <div v-if="project" class="h-full">
+  <div v-if="isLoading">
+    <p>Loading...</p>
+  </div>
+  <div v-else-if="project" class="h-full">
     <h2 class="text-2xl font-semibold mb-4">Project: {{ project.name }}</h2>
     <div class="flex space-x-4">
       <!-- Contenedor de columnas y botón -->
@@ -46,7 +48,7 @@
 import { useRoute } from 'vue-router';
 import ColumnDetail from '../components/ColumnDetail.vue';
 import { useProjectStore } from '../store/projectStore';
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 
 const route = useRoute()
 const projectStore = useProjectStore()
@@ -56,6 +58,8 @@ const project = computed(() => projectStore.projects.find(p => p.id === projectI
 
 const isAddingColumn = ref(false)
 const newColumnName = ref('')
+const isLoading = ref(true)
+
 
 const startNewColumn = () => {
   isAddingColumn.value = true
@@ -88,37 +92,47 @@ const resetNewColumnState = () => {
 };
 
 const handleEditColumn = ({ columnId, newName }: { columnId: number; newName: string }) => {
-  projectStore.updateColumnName(projectId, columnId, newName);
+  projectStore.updateColumnName(columnId, newName);
 };
 
 
 const handleDeleteColumn = (columnId: number) => {
-  projectStore.deleteColumn(projectId, columnId)
+  projectStore.deleteColumn(columnId)
 }
 
-const handleEditCard = ({ columnId, cardId }: { columnId: number, cardId: number }) => {
+const handleEditCard = ({ cardId }: { cardId: number }) => {
   const cardTitle = prompt('Edit card title')
   if (cardTitle) {
-    projectStore.editCardInColumn(projectId, columnId, cardId, cardTitle)
+    projectStore.editCardInColumn(cardId, cardTitle)
   }
 }
 
-const handleDeleteCard = ({ columnId, cardId }: { columnId: number, cardId: number }) => {
+const handleDeleteCard = ({ cardId }: { cardId: number }) => {
   if (confirm('Are you sure you want to delete this card?')) {
-    projectStore.deleteCardFromColumn(projectId, columnId, cardId)
+    projectStore.deleteCardFromColumn(cardId)
   }
 }
 
 interface DragCardParams {
-  fromColumnId: number;
-  toColumnId: number;
   cardId: number;
+  toColumnId: number;
   newIndex: number;
 }
 
-const handleDragCard = ({ fromColumnId, toColumnId, cardId, newIndex }: DragCardParams) => {
-  projectStore.moveCard(projectId, fromColumnId, toColumnId, cardId, newIndex);
+const handleDragCard = async ({ cardId, toColumnId, newIndex }: DragCardParams) => {
+  try {
+    await projectStore.moveCard(cardId, toColumnId, newIndex);
+  }
+  catch (error) {
+    console.error('Error moving card:', error);
+  }
 };
+
+onMounted(async () => {
+  await projectStore.getProjects()
+  await projectStore.getColumns(projectId)
+  isLoading.value = false
+})
 
 
 </script>

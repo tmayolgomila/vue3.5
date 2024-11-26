@@ -11,7 +11,7 @@
           <button class="text-lg font-semibold">{{ column.name }}</button>
         </template>
         <template v-else>
-          <input type="text" v-model="editedColumnName" @blur="saveColumnEdit" @keyup.enter="saveColumnEdit"
+          <input type="text" v-model="editedColumnName" @keyup.enter="saveColumnEdit"
             class="text-lg font-semibold border-b text-black w-4/6" autofocus>
         </template>
       </div>
@@ -22,9 +22,10 @@
       </button>
     </div>
 
-    <draggableComponent v-model="column.cards" group="cards" itemKey="id" @end="onDragEnd">
+    <draggableComponent v-model="cards" group="cards" itemKey="id" @end="onDragEnd" :animation="200"
+      :ghost-class="'ghost'" :swap-threshold="0.5">
       <template #item="{ element: card }">
-        <div
+        <div :data-card-id="card.id" :data-column-id="props.column.id"
           class="p-2 bg-gray-50 hover:bg-gray-100 dark:bg-neutral-800 dark:hover:bg-neutral-700 rounded mb-2 shadow-md cursor-pointer"
           @click="openCard(card.id, card.title, card.description)">
           <h4 class="font-semibold capitalize">{{ card.title }}</h4>
@@ -56,8 +57,8 @@
 </template>
 
 <script lang="ts" setup>
-import { useProjectStore } from '../store/projectStore';
-import { nextTick, ref, watch } from 'vue';
+import { useProjectStore, type Card } from '../store/projectStore';
+import { nextTick, onMounted, ref, watch } from 'vue';
 
 import draggableComponent from 'vuedraggable';
 import ColumnModal from './ColumnModal.vue';
@@ -90,6 +91,7 @@ const selectedCardId = ref(0)
 const selectedCardTitle = ref('')
 const selectedCardDescription = ref('')
 const internalIsModalOpen = ref(false);
+const cards = ref<Card[]>([]);
 
 const emits = defineEmits(['addCard', 'editCard', 'deleteCard', 'dragCard', 'editColumn', 'deleteColumn'])
 
@@ -120,13 +122,18 @@ const deleteColumn = () => {
 };
 
 const onDragEnd = (event: { to: HTMLElement; item: HTMLElement; newIndex: number }) => {
-  emits('dragCard', {
-    fromColumnId: props.column.id,
-    toColumnId: event.to.dataset.columnId,
-    cardId: event.item.dataset.cardId,
-    newIndex: event.newIndex,
-  })
-}
+  const fromColumnId = props.column.id;
+  const toColumnId = Number(event.to.dataset.columnId || props.column.id); // Evita `NaN` si falta el dataset
+  const cardId = Number(event.item.dataset.cardId);
+  const newIndex = event.newIndex;
+
+  if (isNaN(toColumnId) || isNaN(cardId)) {
+    console.error("Error: Los IDs no se pudieron determinar.");
+    return;
+  }
+
+  emits('dragCard', { fromColumnId, toColumnId, cardId, newIndex });
+};
 
 // Add a new card
 const startAddCard = () => {
@@ -141,12 +148,21 @@ const startAddCard = () => {
   })
 }
 
-const saveNewCard = () => {
-  if (newCardTitle.value.trim() !== '') {
-    projectStore.addCardToColumn(props.projectId, props.columnId, newCardTitle.value)
+const saveNewCard = async () => {
+  if (newCardTitle.value.trim() === '') {
+    console.error('Card title cannot be empty');
+    return;
   }
-  isAddingCard.value = false
-}
+
+  try {
+    await projectStore.addCardToColumn(props.columnId, newCardTitle.value, props.projectId);
+    cards.value = await projectStore.getCards(props.columnId); // Sincroniza la lista
+  } catch (error) {
+    console.error('Error saving new card:', error);
+  } finally {
+    isAddingCard.value = false;
+  }
+};
 
 const cancelAddCard = () => {
   if (newCardTitle.value.trim() === '') {
@@ -159,7 +175,6 @@ const openCard = (cardId: number, cardTitle: string, cardDescription: string) =>
   selectedCardTitle.value = cardTitle;
   internalIsModalOpen.value = true;
   selectedCardDescription.value = cardDescription || ''
-  console.log(cardDescription)
 };
 
 const closeCardDetail = () => {
@@ -168,21 +183,46 @@ const closeCardDetail = () => {
   selectedCardTitle.value = '';
 };
 
-const updateCardTitle = (newTitle: string) => {
-  if (selectedCardTitle.value) {
-    projectStore.editCardInColumn(props.projectId, props.columnId, selectedCardId.value, newTitle)
-    selectedCardTitle.value = newTitle
+const updateCardTitle = async (newTitle: string) => {
+  if (selectedCardId.value) {
+    try {
+
+      await projectStore.editCardInColumn(selectedCardId.value, newTitle);
+
+      const refreshedCards = await projectStore.getCards(props.columnId);
+
+      cards.value = refreshedCards;
+
+      selectedCardTitle.value = newTitle;
+    } catch (error) {
+      console.error('Error updating card title:', error);
+    }
   }
-}
+};
 
-const updateCardDescription = (newDescription: string) => {
-  projectStore.setCardDescription(props.projectId, props.columnId, selectedCardId.value, newDescription)
-  selectedCardDescription.value = newDescription
-}
+const updateCardDescription = async (newDescription: string) => {
+  if (selectedCardId.value) {
+    try {
+      await projectStore.editCardInColumn(selectedCardId.value, selectedCardTitle.value, newDescription);
+      selectedCardDescription.value = newDescription;
 
-const handleDeleteCard = (projectId: number, columnId: number, cardId: number) => {
-  projectStore.deleteCardFromColumn(projectId, columnId, cardId)
-  internalIsModalOpen.value = false
+      // Sincronizar las tarjetas con el servidor
+      const refreshedCards = await projectStore.getCards(props.columnId);
+      cards.value = refreshedCards;
+    } catch (error) {
+      console.error('Error updating card description:', error);
+    }
+  }
+};
+
+const handleDeleteCard = async (projectId: number, columnId: number, cardId: number) => {
+  try {
+    await projectStore.deleteCardFromColumn(cardId)
+    cards.value = cards.value.filter((card) => card.id !== cardId)
+    internalIsModalOpen.value = false
+  } catch (error) {
+    console.error('Error deleting card:', error);
+  }
 }
 
 const copyList = () => {
@@ -193,28 +233,34 @@ const copyList = () => {
     cards: props.column.cards.map(card => ({ ...card, id: Date.now() + Math.random() }))
   }
 
-  projectStore.addColumnToProject(props.projectId, clonedColumn.name) //Create the new column
+  projectStore.addColumnToProject(props.projectId, clonedColumn.name)
   const newColumn = projectStore.projects.find(project => project.id === props.projectId)?.columns.find(column => column.name === clonedColumn.name)
   if (newColumn) {
-    newColumn.cards = clonedColumn.cards //Assign cloned cards
-    projectStore.saveProjectsToLocalStorage() //Save changes
+    newColumn.cards = clonedColumn.cards
+
   }
 }
 
 const updateColumnColor = ({ columnId, color }: { columnId: number; color: string }) => {
-
   const column = projectStore.projects.find(project => project.id === props.projectId)?.columns.find(column => column.id === columnId)
 
   if (column) {
     column.color = color
-    projectStore.saveProjectsToLocalStorage()
   }
-
 }
 
 watch(() => props.column.name, (newName) => {
   editedColumnName.value = newName
 })
+
+onMounted(async () => {
+  try {
+    const loadedCards = await projectStore.getCards(props.columnId);
+    cards.value = loadedCards;
+  } catch (error) {
+    console.error('Error loading cards:', error);
+  }
+});
 
 
 </script>
