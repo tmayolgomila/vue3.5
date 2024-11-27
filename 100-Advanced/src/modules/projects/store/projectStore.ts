@@ -152,6 +152,8 @@ export const useProjectStore = defineStore('project', () => {
 
       const cards: Card[] = await response.json()
 
+      console.log(`Cards fetched for column ${columnId}:`, cards)
+
       projects.value.forEach((project) => {
         const column = project.columns.find((c) => c.id === columnId)
         if (column) {
@@ -204,35 +206,34 @@ export const useProjectStore = defineStore('project', () => {
     }
   }
 
-  const moveCard = async (cardId: number, toColumnId: number, newPosition: number) => {
-    if (!cardId || !toColumnId || newPosition < 0) {
-      console.error('Error: Datos inválidos para mover la tarjeta.')
-      return
-    }
-    console.log('Datos enviados al backend:', {
-      card_id: cardId,
-      to_column_id: toColumnId,
-      new_position: newPosition,
-    })
-
+  const moveCard = async (
+    fromColumnId: number,
+    cardId: number,
+    toColumnId: number,
+    newPosition: number,
+  ) => {
     try {
       const response = await fetch('http://localhost:8080/cards/move', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          card_id: cardId,
-          to_column_id: toColumnId,
-          new_position: newPosition,
+          fromColumnId,
+          cardId,
+          toColumnId,
+          newPosition,
         }),
       })
-      console.log({ cardId, toColumnId, newPosition })
 
       if (!response.ok) {
-        const errorData = await response.text()
-        throw new Error(errorData || 'Error al mover la tarjeta')
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to move card')
       }
+
+      console.log('Card moved successfully')
     } catch (error) {
-      console.error('Error moviendo la tarjeta:', error)
+      console.error('Error moving card:', error)
     }
   }
 

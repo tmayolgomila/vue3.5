@@ -23,7 +23,7 @@
     </div>
 
     <draggableComponent v-model="cards" group="cards" itemKey="id" @end="onDragEnd" :animation="200"
-      :ghost-class="'ghost'" :swap-threshold="0.5">
+      :ghost-class="'ghost'" :swap-threshold="0.5" :data-column-id="column.id">
       <template #item="{ element: card }">
         <div :data-card-id="card.id" :data-column-id="props.column.id"
           class="p-2 bg-gray-50 hover:bg-gray-100 dark:bg-neutral-800 dark:hover:bg-neutral-700 rounded mb-2 shadow-md cursor-pointer"
@@ -123,14 +123,9 @@ const deleteColumn = () => {
 
 const onDragEnd = (event: { to: HTMLElement; item: HTMLElement; newIndex: number }) => {
   const fromColumnId = props.column.id;
-  const toColumnId = Number(event.to.dataset.columnId || props.column.id); // Evita `NaN` si falta el dataset
+  const toColumnId = Number(event.to.dataset.columnId);
   const cardId = Number(event.item.dataset.cardId);
   const newIndex = event.newIndex;
-
-  if (isNaN(toColumnId) || isNaN(cardId)) {
-    console.error("Error: Los IDs no se pudieron determinar.");
-    return;
-  }
 
   emits('dragCard', { fromColumnId, toColumnId, cardId, newIndex });
 };
@@ -253,9 +248,15 @@ watch(() => props.column.name, (newName) => {
   editedColumnName.value = newName
 })
 
+watch(cards, (newValue) => {
+  console.log('Cards updated in the frontend:', newValue);
+});
+
+
 onMounted(async () => {
   try {
     const loadedCards = await projectStore.getCards(props.columnId);
+    console.log('Cards loaded from store:', loadedCards);
     cards.value = loadedCards;
   } catch (error) {
     console.error('Error loading cards:', error);

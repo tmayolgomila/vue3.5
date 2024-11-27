@@ -1,10 +1,8 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 )
@@ -29,6 +27,7 @@ type Card struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	ColumnID    int    `json:"column_id"`
+	Position    int    `json:"position"`
 }
 
 func enableCORS(next http.Handler) http.Handler {
@@ -329,7 +328,6 @@ func deleteColumn(w http.ResponseWriter, r *http.Request){
 }
 
 // CARDS //
-
 func getCards(w http.ResponseWriter, r *http.Request) {
 	columnID := r.URL.Query().Get("column_id")
 	if columnID == "" {
@@ -337,7 +335,7 @@ func getCards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
- 	rows, err := Db.Query("SELECT id, title, description FROM cards WHERE column_id = ?", columnID)
+	rows, err := Db.Query("SELECT id, title, description, position FROM cards WHERE column_id = ? ORDER BY position", columnID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -347,7 +345,7 @@ func getCards(w http.ResponseWriter, r *http.Request) {
 	var cards []Card
 	for rows.Next() {
 		var card Card
-		if err := rows.Scan(&card.ID, &card.Title, &card.Description); err != nil {
+		if err := rows.Scan(&card.ID, &card.Title, &card.Description, &card.Position); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -365,6 +363,7 @@ func getCards(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(cards)
 }
+
 
 func addCardToColumn(w http.ResponseWriter, r *http.Request) {
 	var newCard Card
@@ -460,175 +459,90 @@ func deleteCardFromColumn(w http.ResponseWriter, r *http.Request){
 }
 
 func moveCard(w http.ResponseWriter, r *http.Request) {
-	// Leer el cuerpo de la solicitud para obtener los datos
-	body, err := io.ReadAll(r.Body)
+	// Parsear el cuerpo de la solicitud
+	var params struct {
+		FromColumnID int `json:"fromColumnId"`
+		CardID       int `json:"cardId"`
+		ToColumnID   int `json:"toColumnId"`
+		NewPosition  int `json:"newPosition"`
+	}
+
+	// Log para verificar los datos recibidos
+	log.Println("Recibiendo datos para mover tarjeta...")
+
+	err := json.NewDecoder(r.Body).Decode(&params)
 	if err != nil {
-		http.Error(w, "Error leyendo el cuerpo de la solicitud: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-	defer r.Body.Close()
-
-	// Log para ver los datos crudos recibidos
-	fmt.Printf("Cuerpo recibido: %s\n", string(body))
-
-	// Definir la estructura de los datos que se esperan
-	var moveData struct {
-		CardID      int `json:"card_id"`
-		ToColumnID  int `json:"to_column_id"`
-		NewPosition int `json:"new_position"`
-	}
-
-	// Decodificar el JSON recibido en la variable moveData
-	if err := json.Unmarshal(body, &moveData); err != nil {
-		http.Error(w, "Error decodificando JSON: "+err.Error(), http.StatusBadRequest)
+		log.Printf("Error al decodificar el cuerpo de la solicitud: %v\n", err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	// Log para ver los datos decodificados
-	fmt.Printf("Datos decodificados: CardID=%d, ToColumnID=%d, NewPosition=%d\n", moveData.CardID, moveData.ToColumnID, moveData.NewPosition)
+	log.Printf("Parámetros recibidos: %+v\n", params)
 
-	// Verificar que los datos sean válidos
-	if moveData.CardID == 0 || moveData.ToColumnID == 0 || moveData.NewPosition < 0 {
-		http.Error(w, "Datos inválidos para mover la tarjeta.", http.StatusBadRequest)
-		return
-	}
-
-	// Comenzar una transacción
+	// Comenzar una transacción para garantizar consistencia
 	tx, err := Db.Begin()
 	if err != nil {
-		http.Error(w, "Error al comenzar transacción: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Error al iniciar la transacción: %v\n", err)
+		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
 	defer tx.Rollback()
 
-	// Obtener la columna actual de la tarjeta
-	var currentColumnID int
-	err = tx.QueryRow("SELECT column_id FROM cards WHERE id = ?", moveData.CardID).Scan(&currentColumnID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			http.Error(w, "Tarjeta no encontrada", http.StatusNotFound)
+	// Si la tarjeta se mueve a otra columna, actualizar la columna
+	if params.FromColumnID != params.ToColumnID {
+		log.Println("La tarjeta se mueve a otra columna.")
+
+		// Actualizar columna y posición de la tarjeta
+		_, err := tx.Exec("UPDATE cards SET column_id = ?, position = ? WHERE id = ?", params.ToColumnID, params.NewPosition, params.CardID)
+		if err != nil {
+			log.Printf("Error al actualizar columna y posición de la tarjeta: %v\n", err)
+			http.Error(w, "Error updating card column", http.StatusInternalServerError)
 			return
 		}
-		http.Error(w, "Error al consultar la base de datos (columna actual): "+err.Error(), http.StatusInternalServerError)
-		fmt.Println("Error al consultar columna actual:", err)
-		return
-	}
 
-	// Log columna actual
-	fmt.Printf("Columna actual de la tarjeta: %d\n", currentColumnID)
-
-	if currentColumnID == moveData.ToColumnID {
-		// Reordenar en la misma columna
-		err = reorderCardsInColumn(tx, currentColumnID, moveData.CardID, moveData.NewPosition)
+		// Ajustar posiciones en la columna de origen
+		_, err = tx.Exec("UPDATE cards SET position = position - 1 WHERE column_id = ? AND position > ?", params.FromColumnID, params.NewPosition)
 		if err != nil {
-			http.Error(w, "Error al reordenar las tarjetas: "+err.Error(), http.StatusInternalServerError)
-			fmt.Println("Error al reordenar en la misma columna:", err)
+			log.Printf("Error al ajustar posiciones en la columna de origen: %v\n", err)
+			http.Error(w, "Error updating positions in source column", http.StatusInternalServerError)
 			return
 		}
 	} else {
-		// Ajustar posiciones en columna de origen
-		_, err = tx.Exec(
-			"UPDATE cards SET position = position - 1 WHERE column_id = ? AND position > (SELECT position FROM cards WHERE id = ?)",
-			currentColumnID, moveData.CardID,
-		)
+		// Reordenar dentro de la misma columna
+		log.Println("La tarjeta se reordena dentro de la misma columna.")
+
+		if params.NewPosition < params.FromColumnID {
+			_, err = tx.Exec("UPDATE cards SET position = position + 1 WHERE column_id = ? AND position >= ? AND position < ?", params.ToColumnID, params.NewPosition, params.FromColumnID)
+		} else {
+			_, err = tx.Exec("UPDATE cards SET position = position - 1 WHERE column_id = ? AND position > ? AND position <= ?", params.ToColumnID, params.FromColumnID, params.NewPosition)
+		}
+
 		if err != nil {
-			http.Error(w, "Error al ajustar posiciones en columna origen: "+err.Error(), http.StatusInternalServerError)
-			fmt.Println("Error ajustando columna origen:", err)
+			log.Printf("Error al actualizar posiciones dentro de la misma columna: %v\n", err)
+			http.Error(w, "Error updating positions in same column", http.StatusInternalServerError)
 			return
 		}
 
-		// Mover tarjeta a nueva columna
-		_, err = tx.Exec(
-			"UPDATE cards SET column_id = ?, position = ? WHERE id = ?",
-			moveData.ToColumnID, moveData.NewPosition, moveData.CardID,
-		)
+		// Actualizar posición de la tarjeta
+		_, err = tx.Exec("UPDATE cards SET position = ? WHERE id = ?", params.NewPosition, params.CardID)
 		if err != nil {
-			http.Error(w, "Error al mover la tarjeta: "+err.Error(), http.StatusInternalServerError)
-			fmt.Println("Error moviendo la tarjeta:", err)
-			return
-		}
-
-		// Reordenar en la nueva columna
-		err = reorderCardsInColumn(tx, moveData.ToColumnID, moveData.CardID, moveData.NewPosition)
-		if err != nil {
-			http.Error(w, "Error al reordenar las tarjetas en nueva columna: "+err.Error(), http.StatusInternalServerError)
-			fmt.Println("Error reordenando nueva columna:", err)
+			log.Printf("Error al actualizar posición de la tarjeta: %v\n", err)
+			http.Error(w, "Error updating card position", http.StatusInternalServerError)
 			return
 		}
 	}
 
-	// Confirmar la transacción
+	// Confirmar transacción
 	if err := tx.Commit(); err != nil {
-		http.Error(w, "Error al confirmar la transacción: "+err.Error(), http.StatusInternalServerError)
-		fmt.Println("Error confirmando transacción:", err)
+		log.Printf("Error al confirmar la transacción: %v\n", err)
+		http.Error(w, "Transaction commit error", http.StatusInternalServerError)
 		return
 	}
 
-	// Log de éxito
-	fmt.Println("Tarjeta movida exitosamente.")
-
-	// Depuración: Verificar las columnas actual y destino
-	printCardsInColumn(currentColumnID)
-	printCardsInColumn(moveData.ToColumnID)
-
-	// Responder con éxito
+	// Registro exitoso
+	log.Printf("Tarjeta %d movida correctamente a columna %d en posición %d.\n", params.CardID, params.ToColumnID, params.NewPosition)
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "Tarjeta movida exitosamente")
 }
 
 
-func printCardsInColumn(columnID int) {
-	rows, err := Db.Query("SELECT id, title, position FROM cards WHERE column_id = ? ORDER BY position", columnID)
-	if err != nil {
-		log.Println("Error al consultar las tarjetas en columna:", err)
-		return
-	}
-	defer rows.Close()
 
-	fmt.Printf("Tarjetas en columna %d:\n", columnID)
-	for rows.Next() {
-		var id, position int
-		var title string
-		if err := rows.Scan(&id, &title, &position); err != nil {
-			log.Println("Error al escanear tarjeta:", err)
-			return
-		}
-		fmt.Printf("ID: %d, Título: %s, Posición: %d\n", id, title, position)
-	}
-}
-
-
-// Función para reordenar las tarjetas dentro de una columna
-func reorderCardsInColumn(tx *sql.Tx, columnID, movedCardID, newPosition int) error {
-	// Obtener todas las tarjetas ordenadas excepto la que se mueve
-	rows, err := tx.Query("SELECT id FROM cards WHERE column_id = ? AND id != ? ORDER BY position ASC", columnID, movedCardID)
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-
-	var cardIDs []int
-	for rows.Next() {
-		var id int
-		if err := rows.Scan(&id); err != nil {
-			return err
-		}
-		cardIDs = append(cardIDs, id)
-	}
-
-	// Insertar la tarjeta movida en la posición indicada
-	if newPosition > len(cardIDs) {
-		newPosition = len(cardIDs) // Ajustar al final si es necesario
-	}
-	cardIDs = append(cardIDs[:newPosition], append([]int{movedCardID}, cardIDs[newPosition:]...)...)
-
-	// Actualizar las posiciones en la base de datos
-	for idx, id := range cardIDs {
-		_, err := tx.Exec("UPDATE cards SET position = ? WHERE id = ?", idx, id)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}

@@ -51,7 +51,7 @@
     :allColumns="projectStore.projects.find(project => project.id === props.projectId)?.columns || []"
     @moveCardsToColumn="handleMoveCardsToColumn" @close="showMoveCardsModal = false" />
 
-  <SortModal :isVisible="showSortModal" @close="showSortModal = false" @selectSort="onSortChange" />
+  <!-- <SortModal :isVisible="showSortModal" @close="showSortModal = false" @selectSort="onSortChange" />-->
 
 </template>
 
@@ -61,7 +61,7 @@ import { ref } from 'vue';
 import ConfirmModal from './ConfirmModal.vue';
 import MoveCardModal from './MoveCardModal.vue';
 import { useProjectStore } from '../store/projectStore';
-import SortModal from './SortModal.vue';
+//import SortModal from './SortModal.vue';
 
 const projectStore = useProjectStore()
 
@@ -127,15 +127,15 @@ const handleMoveCardsToColumn = (targetColumnId: number) => {
   }
 };
 
-const sortCards = (sortBy: 'title' | 'id', order: 'asc' | 'desc') => {
-  projectStore.sortCardsInColumn(props.columnId, sortBy, order);
-  emits('close')
-};
-
-const onSortChange = (sortOption: string) => {
-  const [field, order] = sortOption.split(':')
-  sortCards(field as 'title' | 'id', order as 'asc' | 'desc')
-}
+//const sortCards = (sortBy: 'title' | 'id', order: 'asc' | 'desc') => {
+//  projectStore.sortCardsInColumn(props.columnId, sortBy, order);
+//  emits('close')
+//};
+//
+//const onSortChange = (sortOption: string) => {
+//  const [field, order] = sortOption.split(':')
+//  sortCards(field as 'title' | 'id', order as 'asc' | 'desc')
+//}
 
 
 </script>

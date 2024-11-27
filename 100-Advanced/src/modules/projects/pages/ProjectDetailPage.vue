@@ -114,14 +114,15 @@ const handleDeleteCard = ({ cardId }: { cardId: number }) => {
 }
 
 interface DragCardParams {
+  fromColumnId: number;
   cardId: number;
   toColumnId: number;
   newIndex: number;
 }
 
-const handleDragCard = async ({ cardId, toColumnId, newIndex }: DragCardParams) => {
+const handleDragCard = async ({ fromColumnId, cardId, toColumnId, newIndex }: DragCardParams) => {
   try {
-    await projectStore.moveCard(cardId, toColumnId, newIndex);
+    await projectStore.moveCard(fromColumnId, cardId, toColumnId, newIndex);
   }
   catch (error) {
     console.error('Error moving card:', error);
