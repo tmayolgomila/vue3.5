@@ -121,13 +121,33 @@ const deleteColumn = () => {
   emits('deleteColumn', props.column.id);
 };
 
-const onDragEnd = (event: { to: HTMLElement; item: HTMLElement; newIndex: number }) => {
+const onDragEnd = async (event: { to: HTMLElement; item: HTMLElement; newIndex: number }) => {
   const fromColumnId = props.column.id;
   const toColumnId = Number(event.to.dataset.columnId);
   const cardId = Number(event.item.dataset.cardId);
   const newIndex = event.newIndex;
 
-  emits('dragCard', { fromColumnId, toColumnId, cardId, newIndex });
+  // Captura `oldIndex` antes de manipular `cards.value`
+  const oldIndex = cards.value.findIndex(card => card.id === cardId);
+
+  console.log('Old index:', oldIndex, 'New index:', newIndex);
+
+  // Evita el reordenamiento si no hay cambios reales
+  if (fromColumnId === toColumnId && oldIndex === newIndex) {
+    console.log('No hay cambios en la posición o columna. No se realizará ninguna acción.');
+    return;
+  }
+
+  // Actualiza localmente `cards.value` después de calcular `oldIndex`
+  const card = cards.value[oldIndex];
+  cards.value.splice(oldIndex, 1); // Elimina la tarjeta del índice original
+  cards.value.splice(newIndex, 0, card); // Inserta en el nuevo índice
+
+  console.log('Updated cards after drag:', cards.value.map((card) => card.id));
+
+  await projectStore.syncCardPositions(props.projectId, fromColumnId);
+
+  emits('dragCard', { fromColumnId, toColumnId, cardId, newIndex, oldIndex });
 };
 
 // Add a new card
@@ -232,7 +252,6 @@ const copyList = () => {
   const newColumn = projectStore.projects.find(project => project.id === props.projectId)?.columns.find(column => column.name === clonedColumn.name)
   if (newColumn) {
     newColumn.cards = clonedColumn.cards
-
   }
 }
 
@@ -248,16 +267,18 @@ watch(() => props.column.name, (newName) => {
   editedColumnName.value = newName
 })
 
-watch(cards, (newValue) => {
-  console.log('Cards updated in the frontend:', newValue);
-});
-
 
 onMounted(async () => {
   try {
     const loadedCards = await projectStore.getCards(props.columnId);
-    console.log('Cards loaded from store:', loadedCards);
-    cards.value = loadedCards;
+
+    // Ordena las tarjetas basándote en `position` y actualiza las posiciones si son inválidas
+    const orderedCards = loadedCards.sort((a, b) => a.position - b.position).map((card, index) => ({
+      ...card,
+      position: index, // Corrige las posiciones
+    }));
+
+    cards.value = orderedCards;
   } catch (error) {
     console.error('Error loading cards:', error);
   }

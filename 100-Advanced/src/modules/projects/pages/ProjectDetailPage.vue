@@ -118,16 +118,26 @@ interface DragCardParams {
   cardId: number;
   toColumnId: number;
   newIndex: number;
+  oldIndex: number; // Mantiene oldIndex
 }
 
-const handleDragCard = async ({ fromColumnId, cardId, toColumnId, newIndex }: DragCardParams) => {
-  try {
-    await projectStore.moveCard(fromColumnId, cardId, toColumnId, newIndex);
+const handleDragCard = async ({ fromColumnId, cardId, toColumnId, newIndex, oldIndex }: DragCardParams) => {
+  console.log('Dragging card with details:', { fromColumnId, cardId, toColumnId, newIndex, oldIndex });
+
+  // Verifica si no hubo cambios reales en la posición o columna antes de hacer la llamada
+  if (fromColumnId === toColumnId && newIndex === oldIndex) {
+    console.log('No hay cambios en la posición o columna. No se realizará ninguna acción.');
+    return;
   }
-  catch (error) {
+
+  try {
+    await projectStore.moveCard(fromColumnId, cardId, toColumnId, newIndex, oldIndex);
+    console.log(`Tarjeta ${cardId} movida correctamente de columna ${fromColumnId} a columna ${toColumnId}, nueva posición: ${newIndex}`);
+  } catch (error) {
     console.error('Error moving card:', error);
   }
 };
+
 
 onMounted(async () => {
   await projectStore.getProjects()

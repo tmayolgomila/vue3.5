@@ -105,6 +105,14 @@ func main() {
 		}
 	})
 
+	mux.HandleFunc("/updateCardPositions", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			updateCardPositions(w, r)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
 	// Envolver el servidor con CORS
 	log.Println("Server running on http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", enableCORS(mux)))
@@ -364,6 +372,24 @@ func getCards(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(cards)
 }
 
+func updateCardPositions(w http.ResponseWriter, r *http.Request) {
+	var updatedCards []Card
+	if err := json.NewDecoder(r.Body).Decode(&updatedCards); err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+
+	for _, card := range updatedCards {
+		_, err := Db.Exec("UPDATE cards SET position = ? WHERE id = ?", card.Position, card.ID)
+		if err != nil {
+			http.Error(w, "Failed to update card positions", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 
 func addCardToColumn(w http.ResponseWriter, r *http.Request) {
 	var newCard Card
@@ -412,7 +438,7 @@ func editCardInColumn(w http.ResponseWriter, r *http.Request) {
 
     query := "UPDATE cards SET"
     params := []interface{}{}
-    
+
     if updatedCard.Title != nil {
         query += " title = ?"
         params = append(params, *updatedCard.Title)
@@ -457,7 +483,6 @@ func deleteCardFromColumn(w http.ResponseWriter, r *http.Request){
 
 	w.WriteHeader(http.StatusNoContent)
 }
-
 func moveCard(w http.ResponseWriter, r *http.Request) {
 	// Parsear el cuerpo de la solicitud
 	var params struct {
@@ -465,6 +490,7 @@ func moveCard(w http.ResponseWriter, r *http.Request) {
 		CardID       int `json:"cardId"`
 		ToColumnID   int `json:"toColumnId"`
 		NewPosition  int `json:"newPosition"`
+		OldPosition  int `json:"oldPosition"`
 	}
 
 	// Log para verificar los datos recibidos
@@ -478,6 +504,16 @@ func moveCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("Parámetros recibidos: %+v\n", params)
+
+	// Validar si no hay cambios en la posición o columna
+	if params.FromColumnID == params.ToColumnID && params.NewPosition == params.OldPosition {
+		log.Println("No se detectaron cambios en la posición o columna de la tarjeta.")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "No changes detected in position or column"})
+		return
+	}
+	
 
 	// Comenzar una transacción para garantizar consistencia
 	tx, err := Db.Begin()
@@ -511,10 +547,18 @@ func moveCard(w http.ResponseWriter, r *http.Request) {
 		// Reordenar dentro de la misma columna
 		log.Println("La tarjeta se reordena dentro de la misma columna.")
 
-		if params.NewPosition < params.FromColumnID {
-			_, err = tx.Exec("UPDATE cards SET position = position + 1 WHERE column_id = ? AND position >= ? AND position < ?", params.ToColumnID, params.NewPosition, params.FromColumnID)
+		if params.NewPosition < params.OldPosition {
+			// Mover hacia arriba: Incrementar entre NewPosition y OldPosition - 1
+			_, err = tx.Exec(
+				"UPDATE cards SET position = position + 1 WHERE column_id = ? AND position >= ? AND position < ?",
+				params.ToColumnID, params.NewPosition, params.OldPosition,
+			)
 		} else {
-			_, err = tx.Exec("UPDATE cards SET position = position - 1 WHERE column_id = ? AND position > ? AND position <= ?", params.ToColumnID, params.FromColumnID, params.NewPosition)
+			// Mover hacia abajo: Decrementar entre OldPosition + 1 y NewPosition
+			_, err = tx.Exec(
+				"UPDATE cards SET position = position - 1 WHERE column_id = ? AND position > ? AND position <= ?",
+				params.ToColumnID, params.OldPosition, params.NewPosition,
+			)
 		}
 
 		if err != nil {
@@ -543,6 +587,7 @@ func moveCard(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Tarjeta %d movida correctamente a columna %d en posición %d.\n", params.CardID, params.ToColumnID, params.NewPosition)
 	w.WriteHeader(http.StatusOK)
 }
+
 
 
 

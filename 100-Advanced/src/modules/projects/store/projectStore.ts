@@ -152,8 +152,6 @@ export const useProjectStore = defineStore('project', () => {
 
       const cards: Card[] = await response.json()
 
-      console.log(`Cards fetched for column ${columnId}:`, cards)
-
       projects.value.forEach((project) => {
         const column = project.columns.find((c) => c.id === columnId)
         if (column) {
@@ -211,7 +209,16 @@ export const useProjectStore = defineStore('project', () => {
     cardId: number,
     toColumnId: number,
     newPosition: number,
+    oldPosition: number,
   ) => {
+    console.log('Sending data to backend:', {
+      fromColumnId,
+      cardId,
+      toColumnId,
+      newPosition,
+      oldPosition,
+    })
+
     try {
       const response = await fetch('http://localhost:8080/cards/move', {
         method: 'POST',
@@ -223,6 +230,7 @@ export const useProjectStore = defineStore('project', () => {
           cardId,
           toColumnId,
           newPosition,
+          oldPosition,
         }),
       })
 
@@ -285,6 +293,43 @@ export const useProjectStore = defineStore('project', () => {
     }
   }
 
+  const syncCardPositions = async (projectId: number, columnId: number) => {
+    
+    const project = projects.value.find((p) => p.id === projectId);
+    if (!project) {
+      console.error(`Project with ID ${projectId} not found`);
+      return;
+    }
+  
+    const column = project.columns.find((c) => c.id === columnId);
+    if (!column) {
+      console.error(`Column with ID ${columnId} not found in project ${projectId}`);
+      return;
+    }
+  
+    const updatedPositions = column.cards.map((card, index) => ({
+      id: card.id,
+      position: index,
+    }));
+  
+    try {
+      const response = await fetch('http://localhost:8080/updateCardPositions', {
+        method: 'POST',
+        body: JSON.stringify(updatedPositions),
+        headers: { 'Content-Type': 'application/json' },
+      });
+  
+      if (!response.ok) {
+        throw new Error(`Failed to update card positions: ${response.statusText}`);
+      }
+  
+      console.log('Card positions updated successfully');
+    } catch (error) {
+      console.error('Error updating card positions:', error);
+    }
+  };
+  
+
   return {
     projects,
 
@@ -305,5 +350,6 @@ export const useProjectStore = defineStore('project', () => {
     moveCard,
 
     sortCardsInColumn,
+    syncCardPositions,
   }
 })
